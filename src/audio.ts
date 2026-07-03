@@ -62,9 +62,20 @@ export class AudioKit {
     this.tone(120, 0.35, 'square', 0.12, undefined, 55)
   }
 
-  gameOver() {
-    const notes = [NOTE.G5, NOTE.E5, NOTE.C5]
-    notes.forEach((n, i) => setTimeout(() => this.tone(n, 0.4, 'sine', 0.25), i * 220))
+  /** Happy fanfare — the princess always ends up on the podium. */
+  victory() {
+    const notes = [NOTE.C5, NOTE.E5, NOTE.G5, NOTE.C6]
+    notes.forEach((n, i) => setTimeout(() => {
+      this.tone(n, 0.35, 'triangle', 0.28)
+      this.tone(n * 2, 0.3, 'sine', 0.1)
+    }, i * 150))
+    setTimeout(() => this.tone(NOTE.E6, 0.5, 'sine', 0.2), 650)
+  }
+
+  /** A soft engine rev when the princess sits behind the wheel. */
+  vroom() {
+    this.tone(85, 0.55, 'sawtooth', 0.14, undefined, 240)
+    setTimeout(() => this.tone(110, 0.4, 'sawtooth', 0.1, undefined, 190), 180)
   }
 
   startMusic() {

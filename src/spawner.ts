@@ -97,13 +97,18 @@ export class Spawner {
     }
   }
 
-  reset() {
+  /** Hide every coin and obstacle (used when the celebration starts). */
+  clear() {
     for (const e of [...this.coins, ...this.obstacles]) {
       e.active = false
       e.root.visible = false
     }
     this.distanceSinceSpawn = 0
     this.nextGap = 12
+  }
+
+  reset() {
+    this.clear()
     // Pre-fill the road so the fun starts right away
     this.spawnCoinLine(1, -40, 3)
     this.spawnCoinArc(-70)
