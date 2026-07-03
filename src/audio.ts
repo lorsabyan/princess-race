@@ -62,6 +62,26 @@ export class AudioKit {
     this.tone(120, 0.35, 'square', 0.12, undefined, 55)
   }
 
+  heartPickup() {
+    this.tone(NOTE.C5, 0.12, 'sine', 0.22)
+    setTimeout(() => this.tone(NOTE.G5, 0.25, 'sine', 0.22), 90)
+  }
+
+  magnetPickup() {
+    this.tone(NOTE.E5, 0.08, 'square', 0.1, undefined, NOTE.E6)
+    setTimeout(() => this.tone(NOTE.A5, 0.18, 'sine', 0.2), 80)
+  }
+
+  shieldPickup() {
+    const notes = [NOTE.C6, NOTE.E6, NOTE.G5 * 2]
+    notes.forEach((n, i) => setTimeout(() => this.tone(n, 0.16, 'sine', 0.16), i * 60))
+  }
+
+  /** Obstacle destroyed by the star shield — a satisfying pop. */
+  pop() {
+    this.tone(NOTE.A5, 0.1, 'triangle', 0.25, undefined, NOTE.C6)
+  }
+
   /** Happy fanfare — the princess always ends up on the podium. */
   victory() {
     const notes = [NOTE.C5, NOTE.E5, NOTE.G5, NOTE.C6]

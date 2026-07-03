@@ -1,13 +1,21 @@
 import * as THREE from 'three'
 import { LANES, SPAWN_Z, DESPAWN_Z } from './world'
+import { heartGeo, starGeo } from './common3d'
 
 export type ObstacleKind = 'rock' | 'fence' | 'puddle'
+export type PickupKind = 'heart' | 'magnet' | 'star'
 
 export interface Entity {
   root: THREE.Group
   active: boolean
   lane: number
   kind?: ObstacleKind
+}
+
+export interface Pickup {
+  root: THREE.Group
+  active: boolean
+  kind: PickupKind
 }
 
 const coinMat = new THREE.MeshStandardMaterial({
@@ -74,11 +82,45 @@ function makeObstacle(kind: ObstacleKind): THREE.Group {
   return g
 }
 
+function makePickup(kind: PickupKind): THREE.Group {
+  const g = new THREE.Group()
+  if (kind === 'heart') {
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0xff4d88, roughness: 0.25, emissive: 0xff2d6f, emissiveIntensity: 0.55,
+    })
+    const heart = new THREE.Mesh(heartGeo(0.34), mat)
+    g.add(heart)
+  } else if (kind === 'magnet') {
+    const red = new THREE.MeshStandardMaterial({
+      color: 0xff3b30, roughness: 0.3, emissive: 0xd42a20, emissiveIntensity: 0.35,
+    })
+    const tipMat = new THREE.MeshStandardMaterial({ color: 0xfff4d6, roughness: 0.4 })
+    const arc = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.09, 8, 18, Math.PI), red)
+    g.add(arc)
+    for (const side of [-1, 1]) {
+      const tip = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.16, 0.18), tipMat)
+      tip.position.set(side * 0.26, -0.1, 0)
+      g.add(tip)
+    }
+  } else {
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0xffd24d, roughness: 0.2, metalness: 0.4, emissive: 0xffb400, emissiveIntensity: 0.7,
+    })
+    const star = new THREE.Mesh(starGeo(0.36, 0.12), mat)
+    g.add(star)
+  }
+  g.position.y = 1.05
+  return g
+}
+
 export class Spawner {
   readonly coins: Entity[] = []
   readonly obstacles: Entity[] = []
+  readonly pickups: Pickup[] = []
   private distanceSinceSpawn = 0
   private nextGap = 12
+  private pickupDistance = 0
+  private nextPickupGap = 40
 
   constructor(private scene: THREE.Scene) {
     for (let i = 0; i < 48; i++) {
@@ -95,16 +137,27 @@ export class Spawner {
       scene.add(root)
       this.obstacles.push({ root, active: false, lane: 1, kind })
     }
+    const pickupKinds: PickupKind[] = ['heart', 'magnet', 'star']
+    for (const kind of pickupKinds) {
+      for (let i = 0; i < 2; i++) {
+        const root = makePickup(kind)
+        root.visible = false
+        scene.add(root)
+        this.pickups.push({ root, active: false, kind })
+      }
+    }
   }
 
-  /** Hide every coin and obstacle (used when the celebration starts). */
+  /** Hide every coin, obstacle and pickup (used when the celebration starts). */
   clear() {
-    for (const e of [...this.coins, ...this.obstacles]) {
+    for (const e of [...this.coins, ...this.obstacles, ...this.pickups]) {
       e.active = false
       e.root.visible = false
     }
     this.distanceSinceSpawn = 0
     this.nextGap = 12
+    this.pickupDistance = 0
+    this.nextPickupGap = 40
   }
 
   reset() {
@@ -166,8 +219,27 @@ export class Spawner {
     }
   }
 
-  update(dt: number, speed: number) {
+  private spawnPickup(allowHeart: boolean) {
+    let kind: PickupKind
+    const roll = Math.random()
+    if (allowHeart && roll < 0.45) kind = 'heart'
+    else kind = roll < 0.72 ? 'magnet' : 'star'
+    const pickup = this.pickups.find((p) => !p.active && p.kind === kind)
+    if (!pickup) return
+    pickup.active = true
+    pickup.root.visible = true
+    pickup.root.position.set(LANES[Math.floor(Math.random() * 3)], 1.05, SPAWN_Z - 4)
+  }
+
+  update(dt: number, speed: number, allowHeart = false) {
     this.distanceSinceSpawn += speed * dt
+    this.pickupDistance += speed * dt
+
+    if (this.pickupDistance >= this.nextPickupGap) {
+      this.pickupDistance = 0
+      this.nextPickupGap = 42 + Math.random() * 30
+      this.spawnPickup(allowHeart)
+    }
 
     if (this.distanceSinceSpawn >= this.nextGap) {
       this.distanceSinceSpawn = 0
@@ -199,6 +271,17 @@ export class Spawner {
       if (obstacle.root.position.z > DESPAWN_Z) {
         obstacle.active = false
         obstacle.root.visible = false
+      }
+    }
+
+    for (const pickup of this.pickups) {
+      if (!pickup.active) continue
+      pickup.root.position.z += speed * dt
+      pickup.root.rotation.y += dt * 2.6
+      pickup.root.position.y = 1.05 + Math.sin(pickup.root.position.z * 0.6) * 0.12
+      if (pickup.root.position.z > DESPAWN_Z) {
+        pickup.active = false
+        pickup.root.visible = false
       }
     }
   }

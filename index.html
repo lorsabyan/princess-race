@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#ff5c9e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="./icons/icon-180.png" />
+  <link rel="icon" type="image/png" href="./icons/icon-192.png" />
   <title>Արքայադստեր մրցարշավը 👑</title>
   <link rel="stylesheet" href="/src/style.css" />
 </head>
@@ -11,7 +17,11 @@
 
   <div id="hud" class="hidden">
     <div id="hearts"></div>
-    <div id="coin-counter"><span id="coin-icon"></span><span id="coin-count">0</span></div>
+    <div id="hud-right">
+      <div id="power" class="hidden"><span id="power-icon"></span><span id="power-time"></span></div>
+      <div id="coin-counter"><span id="coin-icon"></span><span id="coin-count">0</span></div>
+      <button id="pause-btn" aria-label="Դադար">⏸</button>
+    </div>
   </div>
 
   <div id="start-screen" class="overlay">
@@ -19,18 +29,43 @@
       <div class="crown">👑</div>
       <h1>Արքայադստեր<br />մրցարշավը</h1>
       <p class="subtitle">Հավաքի՛ր ոսկե մետաղադրամները,<br />շրջանցի՛ր խոչընդոտները</p>
+
+      <input id="name-input" type="text" maxlength="20" placeholder="Արքայադստեր անունը ✏️" autocomplete="off" />
+
+      <div id="speed-row" role="group" aria-label="Արագություն">
+        <button id="speed-calm" class="seg-btn">🐢 Հանգիստ</button>
+        <button id="speed-fast" class="seg-btn active">🐰 Արագ</button>
+      </div>
+
       <button id="start-btn" class="big-btn">Սկսել 🚗</button>
+
+      <div id="garage">
+        <div id="garage-title">Ավտոտնակ 🎨 <span id="bank"></span></div>
+        <div id="garage-row"></div>
+      </div>
+
       <p class="hint">← → ստեղներով կամ հպելով էկրանին</p>
     </div>
   </div>
 
   <div id="gameover-screen" class="overlay hidden">
     <div class="panel">
-      <div class="crown">🌟</div>
-      <h1>Ապրե՛ս</h1>
+      <div class="crown">🏆</div>
+      <div id="stars"><span></span><span></span><span></span></div>
+      <h1 id="gameover-title">Ապրե՛ս</h1>
       <p class="result">Հավաքեցիր <span id="final-coins">0</span> մետաղադրամ</p>
       <p class="result best">Ռեկորդ՝ <span id="best-coins">0</span></p>
       <button id="restart-btn" class="big-btn">Նորից խաղալ ✨</button>
+      <button id="home-btn" class="small-btn">🏠 Գլխավոր էջ</button>
+    </div>
+  </div>
+
+  <div id="pause-screen" class="overlay hidden">
+    <div class="panel">
+      <div class="crown">⏸️</div>
+      <h1>Դադար</h1>
+      <button id="resume-btn" class="big-btn">Շարունակել ▶</button>
+      <button id="pause-home-btn" class="small-btn">🏠 Գլխավոր էջ</button>
     </div>
   </div>
 

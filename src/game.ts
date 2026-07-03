@@ -12,14 +12,20 @@ import { Spawner } from './spawner'
 import { Particles } from './particles'
 import { AudioKit } from './audio'
 import { UI } from './ui'
-import { starGeo, MAT } from './common3d'
+import { starGeo, MAT, CAR_COLORS, type CarColorId } from './common3d'
 
-type State = 'menu' | 'intro' | 'playing' | 'celebrate' | 'over'
+type State = 'menu' | 'intro' | 'playing' | 'paused' | 'celebrate' | 'over'
 
 const MAX_HEARTS = 3
-const BASE_SPEED = 13
-const MAX_SPEED = 26
 const BEST_KEY = 'princess-race-best'
+const BANK_KEY = 'princess-race-bank'
+const THEME_EVERY_COINS = 40
+const POWER_DURATION = 6
+
+const SPEED_MODES = {
+  calm: { base: 10, max: 16, ramp: 0.1 },
+  fast: { base: 13, max: 26, ramp: 0.22 },
+}
 
 // Intro: walk to the car, then hop in
 const WALK_FROM = new THREE.Vector3(3.6, 0, 1.8)
@@ -50,10 +56,15 @@ export class Game {
 
   private state: State = 'menu'
   private stateTime = 0
-  private speed = BASE_SPEED
+  private speed = SPEED_MODES.fast.base
+  private speedMode = SPEED_MODES.fast
   private hearts = MAX_HEARTS
   private coins = 0
   private invincibleFor = 0
+  private magnetFor = 0
+  private shieldFor = 0
+  private sparkleTimer = 0
+  private themeIndex = 0
   private elapsed = 0
   private confettiTimer = 0
   private jumpFrom = new THREE.Vector3()
@@ -111,8 +122,59 @@ export class Game {
     this.ui.onLeft = () => { if (this.state === 'playing') this.car.moveLeft() }
     this.ui.onRight = () => { if (this.state === 'playing') this.car.moveRight() }
     this.ui.onToggleMute = () => this.audio.toggleMute()
+    this.ui.onPause = () => this.pause()
+    this.ui.onResume = () => this.resume()
+    this.ui.onHome = () => this.goHome()
+    this.ui.onColorSelect = (id) => this.applyCarColor(id)
 
+    // Pause automatically when the tab is hidden (kid switches apps)
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) this.pause()
+    })
+
+    this.applyCarColor(this.ui.selectedColor)
+    this.ui.renderGarage(this.bank)
     this.ui.showStart()
+  }
+
+  private get bank(): number {
+    return Number(localStorage.getItem(BANK_KEY) ?? 0)
+  }
+
+  private applyCarColor(id: CarColorId) {
+    const color = CAR_COLORS.find((c) => c.id === id) ?? CAR_COLORS[0]
+    MAT.paint.color.setHex(color.paint)
+    MAT.paintDeep.color.setHex(color.deep)
+  }
+
+  private pause() {
+    if (this.state !== 'playing') return
+    this.state = 'paused'
+    this.audio.stopMusic()
+    this.ui.showPause()
+  }
+
+  private resume() {
+    if (this.state !== 'paused') return
+    this.state = 'playing'
+    this.audio.startMusic()
+    this.ui.hidePause()
+  }
+
+  private goHome() {
+    if (this.state !== 'paused' && this.state !== 'over') return
+    this.audio.stopMusic()
+    this.spawner.clear()
+    this.podium.visible = false
+    this.car.lane = 1
+    this.car.group.position.set(0, 0, 0)
+    this.world.scene.add(this.princess.group)
+    this.princess.group.position.copy(WALK_FROM)
+    this.princess.group.rotation.set(0, Math.PI / 2, 0)
+    this.princess.setPose('idle')
+    this.ui.renderGarage(this.bank)
+    this.ui.showStart()
+    this.setState('menu')
   }
 
   private buildPodium(): THREE.Group {
@@ -151,11 +213,16 @@ export class Game {
 
   private beginRun() {
     this.audio.ensure()
-    this.speed = BASE_SPEED
+    this.speedMode = SPEED_MODES[this.ui.speedMode]
+    this.speed = this.speedMode.base
     this.hearts = MAX_HEARTS
     this.coins = 0
     this.invincibleFor = 0
-    this.elapsed = 0
+    this.magnetFor = 0
+    this.shieldFor = 0
+    this.themeIndex = 0
+    this.world.transitionTo(0)
+    MAT.paint.emissiveIntensity = 0
     this.car.lane = 1
     this.car.group.position.set(0, 0, 0)
     this.car.setBlinking(false)
@@ -199,6 +266,11 @@ export class Game {
     this.princess.group.getWorldPosition(this.jumpFrom)
     this.world.scene.add(this.princess.group)
     this.princess.group.position.copy(this.jumpFrom)
+
+    // Collected coins go into the garage bank
+    localStorage.setItem(BANK_KEY, String(this.bank + this.coins))
+    MAT.paint.emissiveIntensity = 0
+    this.ui.setPower(null, 0)
     this.setState('celebrate')
   }
 
@@ -260,7 +332,8 @@ export class Game {
     if (t >= CELE_SHOW_SCREEN && this.state === 'celebrate') {
       const best = Math.max(this.coins, Number(localStorage.getItem(BEST_KEY) ?? 0))
       localStorage.setItem(BEST_KEY, String(best))
-      this.ui.showGameOver(this.coins, best)
+      const stars = this.coins >= 30 ? 3 : this.coins >= 15 ? 2 : 1
+      this.ui.showGameOver(this.coins, best, stars)
       this.setState('over')
     }
   }
@@ -282,13 +355,43 @@ export class Game {
       }
     }
 
-    if (this.invincibleFor > 0) return
+    // Pickups: heart, magnet, star shield
+    for (const pickup of this.spawner.pickups) {
+      if (!pickup.active) continue
+      const dz = Math.abs(pickup.root.position.z)
+      const dx = Math.abs(pickup.root.position.x - carX)
+      if (dz < 1.5 && dx < 1.2) {
+        pickup.active = false
+        pickup.root.visible = false
+        this.particles.burst(pickup.root.position.clone())
+        if (pickup.kind === 'heart') {
+          this.hearts = Math.min(MAX_HEARTS, this.hearts + 1)
+          this.ui.setHearts(this.hearts, MAX_HEARTS)
+          this.audio.heartPickup()
+        } else if (pickup.kind === 'magnet') {
+          this.magnetFor = POWER_DURATION
+          this.audio.magnetPickup()
+        } else {
+          this.shieldFor = POWER_DURATION
+          this.audio.shieldPickup()
+        }
+      }
+    }
 
     for (const obstacle of this.spawner.obstacles) {
       if (!obstacle.active) continue
       const dz = Math.abs(obstacle.root.position.z)
       const dx = Math.abs(obstacle.root.position.x - carX)
       if (dz < 1.5 && dx < 1.2) {
+        // With the star shield the obstacle pops harmlessly
+        if (this.shieldFor > 0) {
+          obstacle.active = false
+          obstacle.root.visible = false
+          this.particles.burst(obstacle.root.position.clone(), 18)
+          this.audio.pop()
+          continue
+        }
+        if (this.invincibleFor > 0) continue
         obstacle.active = false
         obstacle.root.visible = false
         this.hearts--
@@ -303,6 +406,43 @@ export class Game {
         return
       }
     }
+  }
+
+  /** Magnet pulls coins toward the car; the star shield sparkles. */
+  private updatePowers(dt: number) {
+    const carX = this.car.group.position.x
+
+    if (this.magnetFor > 0) {
+      this.magnetFor -= dt
+      for (const coin of this.spawner.coins) {
+        if (!coin.active) continue
+        const z = coin.root.position.z
+        if (z > -22 && z < 2) {
+          coin.root.position.x += (carX - coin.root.position.x) * Math.min(1, dt * 5)
+          coin.root.position.z += this.speed * dt * 0.5
+        }
+      }
+    }
+
+    if (this.shieldFor > 0) {
+      this.shieldFor -= dt
+      MAT.paint.emissive.setHex(0xffc93c)
+      MAT.paint.emissiveIntensity = 0.22 + Math.sin(this.elapsed * 12) * 0.12
+      this.sparkleTimer -= dt
+      if (this.sparkleTimer <= 0) {
+        this.sparkleTimer = 0.16
+        const pos = this.car.group.position.clone()
+        pos.y += 0.9
+        pos.x += (Math.random() - 0.5) * 1.6
+        pos.z += (Math.random() - 0.5) * 2.4
+        this.particles.burst(pos, 4)
+      }
+      if (this.shieldFor <= 0) MAT.paint.emissiveIntensity = 0
+    }
+
+    if (this.shieldFor > 0) this.ui.setPower('star', this.shieldFor)
+    else if (this.magnetFor > 0) this.ui.setPower('magnet', this.magnetFor)
+    else this.ui.setPower(null, 0)
   }
 
   start() {
@@ -327,12 +467,22 @@ export class Game {
 
       case 'playing': {
         this.elapsed += dt
-        this.speed = Math.min(MAX_SPEED, BASE_SPEED + this.elapsed * 0.22)
+        this.speed = Math.min(this.speedMode.max, this.speedMode.base + this.elapsed * this.speedMode.ramp)
         this.world.update(dt, this.speed)
-        this.spawner.update(dt, this.speed)
+        this.spawner.update(dt, this.speed, this.hearts < MAX_HEARTS)
         this.car.update(dt, this.speed)
         this.princess.update(dt)
         this.checkCollisions()
+        // checkCollisions may have ended the run — don't re-show power HUD then
+        if (this.state === 'playing') this.updatePowers(dt)
+
+        // Scenery changes as the coin count grows
+        const theme = Math.floor(this.coins / THEME_EVERY_COINS) % this.world.themeCount
+        if (theme !== this.themeIndex) {
+          this.themeIndex = theme
+          this.world.transitionTo(theme)
+        }
+
         if (this.invincibleFor > 0) {
           this.invincibleFor -= dt
           this.car.blink(this.elapsed)
@@ -340,6 +490,9 @@ export class Game {
         }
         break
       }
+
+      case 'paused':
+        break
 
       case 'celebrate':
       case 'over':

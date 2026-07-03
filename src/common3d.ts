@@ -40,6 +40,16 @@ export function limb(from: THREE.Vector3, to: THREE.Vector3, radius: number, mat
   return mesh
 }
 
+/** Unlockable car paint colors; `need` is the banked-coin total required. */
+export const CAR_COLORS = [
+  { id: 'pink', paint: 0xff5c9e, deep: 0xe8437f, css: '#ff5c9e', need: 0 },
+  { id: 'lavender', paint: 0xb28aff, deep: 0x9a6fe8, css: '#b28aff', need: 30 },
+  { id: 'mint', paint: 0x4fd1c5, deep: 0x38b2a6, css: '#4fd1c5', need: 60 },
+  { id: 'gold', paint: 0xffc93c, deep: 0xe0a614, css: '#ffc93c', need: 100 },
+] as const
+
+export type CarColorId = typeof CAR_COLORS[number]['id']
+
 export const MAT = {
   paint: new THREE.MeshPhysicalMaterial({
     color: 0xff5c9e, roughness: 0.32, metalness: 0.05,
