@@ -1,4 +1,5 @@
 import { CAR_COLORS, type CarColorId } from './common3d'
+import { ICONS, hydrateIcons } from './icons'
 
 const NAME_KEY = 'princess-race-name'
 const SPEED_KEY = 'princess-race-speed'
@@ -41,6 +42,9 @@ export class UI {
   onColorSelect: (id: CarColorId) => void = () => {}
 
   constructor() {
+    hydrateIcons()
+    this.muteBtn.innerHTML = ICONS.speakerOn()
+
     el<HTMLButtonElement>('start-btn').addEventListener('click', () => this.onStart())
     el<HTMLButtonElement>('restart-btn').addEventListener('click', () => this.onRestart())
     el<HTMLButtonElement>('pause-btn').addEventListener('click', () => this.onPause())
@@ -77,7 +81,7 @@ export class UI {
 
     this.muteBtn.addEventListener('click', () => {
       const muted = this.onToggleMute()
-      this.muteBtn.textContent = muted ? '🔇' : '🔊'
+      this.muteBtn.innerHTML = muted ? ICONS.speakerOff() : ICONS.speakerOn()
     })
 
     // Name — saved as it is typed
@@ -114,7 +118,7 @@ export class UI {
 
   /** Rebuild the garage swatches for the current coin bank. */
   renderGarage(bank: number) {
-    this.bankEl.textContent = `(ունես ${bank} 🪙)`
+    this.bankEl.innerHTML = `(ունես ${bank} ${ICONS.coin()})`
     this.garageRow.innerHTML = ''
     for (const color of CAR_COLORS) {
       const locked = bank < color.need
@@ -122,7 +126,7 @@ export class UI {
       btn.className = 'swatch' + (locked ? ' locked' : '') +
         (color.id === this.selectedColor ? ' selected' : '')
       btn.style.background = `radial-gradient(circle at 35% 30%, #ffffff55, ${color.css} 55%)`
-      btn.textContent = locked ? `🔒${color.need}` : ''
+      btn.innerHTML = locked ? `${ICONS.lock()}<span class="need">${color.need}</span>` : ''
       btn.setAttribute('aria-label', color.id)
       if (!locked) {
         btn.addEventListener('click', () => {
@@ -167,7 +171,7 @@ export class UI {
     this.bestCoinsEl.textContent = String(best)
     const spans = this.starsEl.querySelectorAll('span')
     spans.forEach((s, i) => {
-      s.textContent = '⭐'
+      s.innerHTML = ICONS.star()
       s.classList.toggle('earned', i < stars)
     })
     this.gameoverScreen.classList.remove('hidden')
@@ -176,7 +180,7 @@ export class UI {
 
   setHearts(hearts: number, max: number) {
     this.heartsEl.innerHTML = Array.from({ length: max }, (_, i) =>
-      `<span class="${i < hearts ? '' : 'lost'}">💗</span>`
+      `<span class="${i < hearts ? '' : 'lost'}">${ICONS.heart()}</span>`
     ).join('')
   }
 
@@ -194,7 +198,11 @@ export class UI {
       return
     }
     this.powerEl.classList.remove('hidden')
-    this.powerIcon.textContent = kind === 'magnet' ? '🧲' : '⭐'
+    const icon = kind === 'magnet' ? ICONS.magnet() : ICONS.star()
+    if (this.powerIcon.dataset.kind !== kind) {
+      this.powerIcon.dataset.kind = kind
+      this.powerIcon.innerHTML = icon
+    }
     this.powerTime.textContent = String(Math.max(0, Math.ceil(seconds)))
   }
 }

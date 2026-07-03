@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { limb } from './common3d'
 
 export const LANES = [-2.4, 0, 2.4]
 export const ROAD_WIDTH = 7.8
@@ -322,22 +323,75 @@ export class World {
   }
 
   private buildBalloons() {
-    const colors = [0xff8fb8, 0x8fdbb0, 0xffd166]
+    // Alternating gore stripes on a teardrop envelope, ropes and a wicker basket
+    const palettes: [number, number][] = [
+      [0xff8fb8, 0xfff4d6],
+      [0x8fdbb0, 0xfff4d6],
+      [0xffd166, 0xff8fb8],
+    ]
+    const profile = [
+      new THREE.Vector2(0.55, 0),
+      new THREE.Vector2(1.35, 0.55),
+      new THREE.Vector2(2.0, 1.4),
+      new THREE.Vector2(2.25, 2.4),
+      new THREE.Vector2(1.95, 3.4),
+      new THREE.Vector2(1.15, 4.15),
+      new THREE.Vector2(0.0, 4.45),
+    ]
+
     for (let i = 0; i < 3; i++) {
       const balloon = new THREE.Group()
-      const envelope = new THREE.Mesh(
-        new THREE.SphereGeometry(2.6, 14, 12),
-        new THREE.MeshBasicMaterial({ color: colors[i], fog: false })
-      )
-      envelope.scale.y = 1.15
-      balloon.add(envelope)
-      const basket = new THREE.Mesh(
-        new THREE.BoxGeometry(1.0, 0.8, 1.0),
-        new THREE.MeshBasicMaterial({ color: 0xb0793f, fog: false })
-      )
-      basket.position.y = -3.6
+      const [colorA, colorB] = palettes[i]
+      const wedges = 10
+      for (let w = 0; w < wedges; w++) {
+        const mat = new THREE.MeshStandardMaterial({
+          color: w % 2 === 0 ? colorA : colorB,
+          roughness: 0.55,
+          emissive: w % 2 === 0 ? colorA : colorB,
+          emissiveIntensity: 0.28,
+          fog: false,
+        })
+        const wedge = new THREE.Mesh(
+          new THREE.LatheGeometry(profile, 5, (w / wedges) * Math.PI * 2, (Math.PI * 2) / wedges),
+          mat
+        )
+        balloon.add(wedge)
+      }
+
+      // Golden ring around the mouth of the envelope
+      const trimMat = new THREE.MeshStandardMaterial({
+        color: 0xffc93c, roughness: 0.35, emissive: 0xdd9900, emissiveIntensity: 0.25, fog: false,
+      })
+      const trim = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.11, 8, 18), trimMat)
+      trim.rotation.x = Math.PI / 2
+      balloon.add(trim)
+
+      // Ropes down to the basket
+      const ropeMat = new THREE.MeshStandardMaterial({ color: 0x8a6b4a, roughness: 0.9, fog: false })
+      const basketTop = -1.35
+      for (const [rx, rz] of [[-0.42, -0.42], [0.42, -0.42], [-0.42, 0.42], [0.42, 0.42]]) {
+        balloon.add(limb(
+          new THREE.Vector3(rx * 1.25, 0, rz * 1.25),
+          new THREE.Vector3(rx, basketTop, rz),
+          0.035, ropeMat
+        ))
+      }
+
+      // Wicker basket with a cream rim
+      const basketMat = new THREE.MeshStandardMaterial({
+        color: 0xb0793f, roughness: 0.85, emissive: 0x5a3a1a, emissiveIntensity: 0.2, fog: false,
+      })
+      const basket = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.45, 0.75, 10), basketMat)
+      basket.position.y = basketTop - 0.35
       balloon.add(basket)
+      const rimMat = new THREE.MeshStandardMaterial({ color: 0xfff4d6, roughness: 0.6, fog: false })
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.07, 8, 14), rimMat)
+      rim.rotation.x = Math.PI / 2
+      rim.position.y = basketTop
+      balloon.add(rim)
+
       balloon.position.set(-60 + i * 55, 20 + Math.random() * 10, -130 - Math.random() * 60)
+      balloon.scale.setScalar(0.9 + Math.random() * 0.5)
       balloon.userData.speed = 0.4 + Math.random() * 0.5
       balloon.userData.phase = Math.random() * Math.PI * 2
       this.scene.add(balloon)
@@ -479,10 +533,11 @@ export class World {
       if (cloud.position.x > 90) cloud.position.x = -90
     }
 
-    // Balloons drift and bob
+    // Balloons drift, bob and sway gently
     for (const balloon of this.balloons) {
       balloon.position.x += balloon.userData.speed * dt
       balloon.position.y += Math.sin(this.time * 0.8 + balloon.userData.phase) * dt * 0.6
+      balloon.rotation.z = Math.sin(this.time * 0.6 + balloon.userData.phase) * 0.06
       if (balloon.position.x > 85) balloon.position.x = -85
     }
 

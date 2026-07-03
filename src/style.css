@@ -25,6 +25,31 @@ html, body {
 
 .hidden { display: none !important; }
 
+/* ---------- SVG icon set ---------- */
+.icon {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+  vertical-align: -0.14em;
+}
+
+.crown .icon { width: 76px; height: 56px; }
+.crown.pause-icon { color: var(--pink); }
+.crown.pause-icon .icon { width: 56px; height: 56px; }
+
+#pause-btn .icon { width: 20px; height: 20px; color: var(--plum); }
+#mute-btn .icon { width: 24px; height: 24px; color: var(--plum); }
+.touch-btn .icon { width: 36px; height: 36px; }
+#hearts .icon { width: 30px; height: 30px; }
+#power .icon { width: 22px; height: 22px; }
+.seg-btn .icon { width: 24px; height: 20px; vertical-align: -0.22em; }
+.big-btn .icon { width: 1.15em; height: 1em; vertical-align: -0.16em; }
+.small-btn .icon { width: 18px; height: 18px; }
+#stars .icon { width: 42px; height: 42px; }
+#bank .icon { width: 15px; height: 15px; }
+.swatch .icon { width: 18px; height: 18px; }
+.swatch .need { font-size: 12px; display: block; line-height: 1; }
+
 /* ---------- HUD ---------- */
 #hud {
   position: fixed;
@@ -37,8 +62,9 @@ html, body {
   z-index: 10;
 }
 
-#hearts { font-size: 30px; letter-spacing: 4px; filter: drop-shadow(0 2px 0 rgba(90, 62, 107, 0.35)); }
-#hearts .lost { opacity: 0.25; filter: grayscale(1); }
+#hearts { filter: drop-shadow(0 2px 0 rgba(90, 62, 107, 0.35)); }
+#hearts span { margin-right: 4px; }
+#hearts .lost { opacity: 0.3; filter: grayscale(1); }
 
 #hud-right { display: flex; align-items: center; gap: 10px; }
 
@@ -124,7 +150,7 @@ html, body {
   to { transform: none; opacity: 1; }
 }
 
-.crown { font-size: 56px; margin-bottom: 4px; animation: bounce 2.2s ease-in-out infinite; }
+.crown { margin-bottom: 4px; animation: bounce 2.2s ease-in-out infinite; filter: drop-shadow(0 3px 0 rgba(90, 62, 107, 0.15)); }
 @keyframes bounce { 50% { transform: translateY(-8px) rotate(-4deg); } }
 
 h1 {
@@ -244,7 +270,7 @@ h1 {
 .swatch.locked { cursor: default; filter: saturate(0.35) brightness(0.9); }
 
 /* ---------- Podium stars ---------- */
-#stars { font-size: 40px; height: 52px; margin-bottom: 4px; }
+#stars { height: 52px; margin-bottom: 4px; }
 #stars span { display: inline-block; margin: 0 4px; opacity: 0.18; filter: grayscale(1); transform: scale(0.8); }
 #stars span.earned {
   opacity: 1; filter: none;

@@ -20,27 +20,27 @@
     <div id="hud-right">
       <div id="power" class="hidden"><span id="power-icon"></span><span id="power-time"></span></div>
       <div id="coin-counter"><span id="coin-icon"></span><span id="coin-count">0</span></div>
-      <button id="pause-btn" aria-label="Դադար">⏸</button>
+      <button id="pause-btn" aria-label="Դադար" data-icon="pause"></button>
     </div>
   </div>
 
   <div id="start-screen" class="overlay">
     <div class="panel">
-      <div class="crown">👑</div>
+      <div class="crown" data-icon="crown"></div>
       <h1>Արքայադստեր<br />մրցարշավը</h1>
       <p class="subtitle">Հավաքի՛ր ոսկե մետաղադրամները,<br />շրջանցի՛ր խոչընդոտները</p>
 
-      <input id="name-input" type="text" maxlength="20" placeholder="Արքայադստեր անունը ✏️" autocomplete="off" />
+      <input id="name-input" type="text" maxlength="20" placeholder="Արքայադստեր անունը" autocomplete="off" />
 
       <div id="speed-row" role="group" aria-label="Արագություն">
-        <button id="speed-calm" class="seg-btn">🐢 Հանգիստ</button>
-        <button id="speed-fast" class="seg-btn active">🐰 Արագ</button>
+        <button id="speed-calm" class="seg-btn"><span data-icon="turtle"></span> Հանգիստ</button>
+        <button id="speed-fast" class="seg-btn active"><span data-icon="rabbit"></span> Արագ</button>
       </div>
 
-      <button id="start-btn" class="big-btn">Սկսել 🚗</button>
+      <button id="start-btn" class="big-btn">Սկսել <span data-icon="car"></span></button>
 
       <div id="garage">
-        <div id="garage-title">Ավտոտնակ 🎨 <span id="bank"></span></div>
+        <div id="garage-title">Ավտոտնակ <span id="bank"></span></div>
         <div id="garage-row"></div>
       </div>
 
@@ -50,31 +50,31 @@
 
   <div id="gameover-screen" class="overlay hidden">
     <div class="panel">
-      <div class="crown">🏆</div>
+      <div class="crown" data-icon="trophy"></div>
       <div id="stars"><span></span><span></span><span></span></div>
       <h1 id="gameover-title">Ապրե՛ս</h1>
       <p class="result">Հավաքեցիր <span id="final-coins">0</span> մետաղադրամ</p>
       <p class="result best">Ռեկորդ՝ <span id="best-coins">0</span></p>
-      <button id="restart-btn" class="big-btn">Նորից խաղալ ✨</button>
-      <button id="home-btn" class="small-btn">🏠 Գլխավոր էջ</button>
+      <button id="restart-btn" class="big-btn">Նորից խաղալ <span data-icon="sparkle"></span></button>
+      <button id="home-btn" class="small-btn"><span data-icon="home"></span> Գլխավոր էջ</button>
     </div>
   </div>
 
   <div id="pause-screen" class="overlay hidden">
     <div class="panel">
-      <div class="crown">⏸️</div>
+      <div class="crown pause-icon" data-icon="pause"></div>
       <h1>Դադար</h1>
-      <button id="resume-btn" class="big-btn">Շարունակել ▶</button>
-      <button id="pause-home-btn" class="small-btn">🏠 Գլխավոր էջ</button>
+      <button id="resume-btn" class="big-btn">Շարունակել <span data-icon="play"></span></button>
+      <button id="pause-home-btn" class="small-btn"><span data-icon="home"></span> Գլխավոր էջ</button>
     </div>
   </div>
 
   <div id="touch-controls" class="hidden">
-    <button id="btn-left" class="touch-btn" aria-label="Ձախ">◀</button>
-    <button id="btn-right" class="touch-btn" aria-label="Աջ">▶</button>
+    <button id="btn-left" class="touch-btn" aria-label="Ձախ" data-icon="chevronLeft"></button>
+    <button id="btn-right" class="touch-btn" aria-label="Աջ" data-icon="chevronRight"></button>
   </div>
 
-  <button id="mute-btn" aria-label="Ձայն">🔊</button>
+  <button id="mute-btn" aria-label="Ձայն"></button>
 
   <script type="module" src="/src/main.ts"></script>
 </body>
