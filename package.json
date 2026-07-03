@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "DEPLOY_BASE=/princess-race/ npm run build && git -C dist init -b gh-pages && git -C dist add -A && git -C dist commit -m 'Deploy to GitHub Pages' && git -C dist push -f https://github.com/lorsabyan/princess-race.git gh-pages && rm -rf dist/.git"
   },
   "dependencies": {
     "three": "^0.178.0"
